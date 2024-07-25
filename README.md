@@ -1,2 +1,2 @@
 # WhatPix
-Repositório para armazenar o trabalho de Redes de Computadores. Que consiste em uma aplicação de envio/troca de mensagens, que utiliza Sockets e um protocolo de comunicação específico.
+Repository created to store the work of the Computer Networks discipline. The work consists of an application for sending/exchanging messages, which uses Sockets and a specific communication protocol. 
