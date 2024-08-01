@@ -1,4 +1,4 @@
-from Server import Server
+from server.Server import Server
 
 HOST = "127.0.0.1"
 PORT = 9070
