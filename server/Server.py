@@ -15,6 +15,7 @@ class Server:
         self.socket.bind((self.host, self.port))
         self.socket.listen()
         print(f'Server running on: {self.host}:{self.port}')
+        self.connections()
         
     def connections(self):
         while True:
