@@ -1,3 +1,5 @@
+from config.logger import logger
+
 class Connection:
     def __init__(self, conn, addr, server):
         super().__init__()
@@ -8,4 +10,5 @@ class Connection:
         self.number = None
         
     def start(self):
-        print(f'Connection created at {self.address}!')
+        logger.info(f"Nova conexão criada com o endereço: {self.address}")
+        #print(f'Connection created at {self.address}!')

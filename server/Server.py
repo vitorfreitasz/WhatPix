@@ -2,6 +2,8 @@ from socket import *
 import threading
 from Connection import Connection
 
+from config.logger import logger
+
 class Server:
     def __init__(self, host, port):
         self.host = host
@@ -10,14 +12,14 @@ class Server:
         self.users = {}
         self.online_users = {}
         
-    def start(self):
-
+    def start(self): # inicia o servidor
+        logger.info("Iniciando o servidor.")
         self.socket.bind((self.host, self.port))
         self.socket.listen()
         print(f'Server running on: {self.host}:{self.port}')
         self.connections()
         
-    def connections(self):
+    def connections(self): # cria uma nova thread para cada solicitação de conexão
         while True:
             conn, addr = self.socket.accept()
             self.thread_connection(conn, addr)
