@@ -12,3 +12,4 @@ class Connection:
     def start(self):
         logger.info(f"Nova conexão criada com o endereço: {self.address}")
         #print(f'Connection created at {self.address}!')
+        self.connection.sendall(b'Bem vindo ao WhatPix!')

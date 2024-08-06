@@ -9,7 +9,20 @@ class Client:
     def start(self): # se conecta com o servidor
         self.socket.connect((self.host, self.port))
         print(f'Connected on: {self.host}:{self.port}')
-        print("\n\nConnected!!!\n\n")
+        print("""
+                   __,__
+          .--.  .-\"     \"-.  .--.
+         / .. \\/  .-. .-.  \\/ .. \\
+        | |  '|  /   Y   \\  |'  | |
+        | \\   \\  \\ 0 | 0 /  /   / |
+         \\ '- ,\\.-\"\"\"\"\"\"\"-./, -' /
+          ''-' /_   ^ ^   _\\ '-'
+              |  \\._   _./  |
+              \\   \\ '~' /   /
+               '._ '-=-' _.'
+                  '-----' 
+        """)
+
         self.messages()
 
     def close(self): # encerra a conexão com o servidor

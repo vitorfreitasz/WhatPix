@@ -1,6 +1,6 @@
 import logging
 
-def setup_logger(name='LUCIA api', log_file='api.log', level=logging.INFO):
+def setup_logger(name='WhatPix', log_file='api.log', level=logging.INFO):
     """
     Configura o logger com o nome e nível especificados.
     """
