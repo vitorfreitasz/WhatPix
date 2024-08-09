@@ -24,7 +24,11 @@ class Server:
             conn, addr = self.socket.accept()
             self.thread_connection(conn, addr)
             
+    def handleResponse(self, req):
+        print(f'Recebi a response: {req}')
+        
     def thread_connection(self, conn, addr):
         user = Connection(conn, addr, self)
         thread = threading.Thread(target=user.start)
         thread.start()
+    
