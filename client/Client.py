@@ -34,13 +34,22 @@ class Client:
         
     def registerOrLogin(self):
         sleep(2)
-        response = input(f'--------------------------------------\n\nPara cadastrar-se, digite 0.\n\n Para entrar digite 1.\n\n--------------------------------------\n\n')
-        if response == 0:
-            self.socket.send('Hello world 1')
-        elif response == 1:
-            self.socket.send('Hello world 1')
+        while True:
+            response = int(input(f'--------------------------------------\n\n Para cadastrar-se, digite 0.\n\n Para entrar digite 1.\n\n--------------------------------------\n\n '))
+            print('Decisão tomada.')
+            if response == 0:
+                print('Enviando mensagem...')
+                self.socket.send(b"Hello world 0")
+                print('Mensagem enviada.')
+            elif response == 1:
+                print('Enviando mensagem...')
+                self.socket.send(b"Hello world 1")
+                print('Mensagem enviada.')
+        return
         
     def messages(self):
         while True:
             data = self.socket.recv(1024)
-            print(f"{data}")
+            print(f"{data.decode()}")
+            if data.decode() == "XYZ":
+                print(f'\n\n Código XYZ retornado do Hello world 0.\n\n')

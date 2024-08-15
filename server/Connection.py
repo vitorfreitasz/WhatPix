@@ -11,13 +11,15 @@ class Connection:
         self.number = None
         
     def awaitingResponse(self):
+        print('Criou thread pelo menos.')
         while True:
             data = self.connection.recv(1024)
-            if not data:
-                break
             req = data.decode()
-            print('oiiiiii')
+            if req:
+                print('RECEBI')
             self.server.handleResponse(req)
+            if req == "Hello world 0":
+                self.connection.sendall(b"XYZ")
 
         
     def start(self):
