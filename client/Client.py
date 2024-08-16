@@ -1,6 +1,9 @@
 from socket import *
+import time
 from time import sleep
 import threading
+from zoneinfo import ZoneInfo
+from datetime import datetime
 
 class Client:
     def __init__(self, host, port):
@@ -51,12 +54,27 @@ class Client:
         
     def awaitingComands(self):
         while True:
-            comand = input()
-            print(comand)
+            comand = input('Escreva seu comando: ')
+            self.handleComand(comand)
+            return
+            
+    def handleComand(self, comand):
+        if comand == 0:
+            while True:
+                dest = str(input(f"Para quem deseja enviar (digite 'cancelar' para cancelar): "))
+                if dest == 'cancelar':
+                    break
+                if len(dest) == 13:
+                    message = str(input(f"Mensagem: "))
+                    if len(message) <= 218:
+                        finalMessage = f"05{self.codeUser}{dest}{str(time.time()).split('.')[0]}{message}".encode('utf-8')
+                        self.socket.send(f"{finalMessage}".encode('utf-8'))
+                        break
+            return
     
     def messages(self):
         while True:
-            data = self.socket.recv(1024)
+            data = self.socket.recv(256)
             req = data.decode()
             if req[:2] == '00':
                 print(f"{req[2:]}\n")
@@ -72,4 +90,6 @@ class Client:
                 thread = threading.Thread(target=self.awaitingComands)
                 thread.start()
             if req[:2] == '06':
-                print(f'Mensagem de ({req[2:15]}): {req[38:]}')
+                print(f"Mensagem de ({req[2:15]}): {req[38:]}")
+            if req[:2] == '07':
+                print(f"Mensagem entregue as ({datetime.fromtimestamp(int(req[15:]), tz=ZoneInfo('America/Sao_Paulo'))}) para ({req[2:15]}).")

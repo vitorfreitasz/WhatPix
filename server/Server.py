@@ -1,6 +1,9 @@
 from socket import *
 import threading
 from Connection import Connection
+import time
+from zoneinfo import ZoneInfo
+from datetime import datetime
 
 from config.logger import logger
 
@@ -38,6 +41,9 @@ class Server:
         return
         
     def login(self, req, connectionClass):
+        if req[2:] in self.online_users:
+            connectionClass.connection.sendall(f"00Usuário já esta online!".encode('utf-8'))
+            return
         if req[2:] in self.users:
             self.users[req[2:]] = connectionClass
             self.online_users[req[2:]] = connectionClass
@@ -51,8 +57,8 @@ class Server:
                 connectionClass.connection.sendall(newMessage.encode('utf-8'))
                 codeUser = message[2:16]
                 if codeUser in self.online_users:
-                    conn = self.online_users[codeUser]
-                    conn.sendall(confirmSendMessage.encode('utf-8'))
+                    connClass = self.online_users[codeUser]
+                    connClass.connection.sendall(confirmSendMessage.encode('utf-8'))
                 else:
                     self.awaiting_messages[codeUser].append(message)
             self.awaiting_messages[req[2:]] = []
@@ -60,13 +66,14 @@ class Server:
             connectionClass.connection.sendall(f"00Código identificador não cadastrado!".encode('utf-8'))
         return
     
-    def message(self, conn, addr, req):
-        print(conn)
+    def message(self, req, connectionClass):
+        
         print(req[15:28])
         if req[15:28] in self.online_users:
-            self.online_users[req[15:28]].connection.sendall(f"06{req[2:15],req[15:28],req[28:38],req[38:]}".encode('utf-8'))
+            self.online_users[req[15:28]].connection.sendall(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
+            connectionClass.connection.sendall(f"07{req[15:28]}{str(time.time()).split('.')[0]}".encode('utf-8'))
         elif req[15:28] in self.users:
-            self.awaiting_messages[req[15:28]].append(f"06{req[2:15],req[15:28],req[28:38],req[38:]}".encode('utf-8'))
+            self.awaiting_messages[req[15:28]].append(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
         return
         
     def thread_connection(self, conn, addr):

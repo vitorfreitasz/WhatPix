@@ -15,7 +15,7 @@ class Connection:
         print('Criou thread.')
         while True:
             try:
-                data = self.connection.recv(1024)
+                data = self.connection.recv(256)
                 if not data:
                     break
                 req = data.decode()
@@ -33,7 +33,7 @@ class Connection:
         elif action == '03':
             self.server.login(req, self)
         elif action == '05':
-            self.server.message()
+            self.server.message(req, self)
         elif action == '08':
             self.confirmaleitura
         
