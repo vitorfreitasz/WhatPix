@@ -12,7 +12,7 @@ class Connection:
         self.id = None
         
     def awaitingResponse(self):
-        print('Criou thread.')
+        #logger.info('Criou nova thread.')
         while True:
             try:
                 data = self.connection.recv(256)
@@ -39,13 +39,10 @@ class Connection:
         
         else:
             self.connection.sendall(b"0000000000000")
-        
-        
+            
     def start(self):
         logger.info(f"Nova conexão criada com o endereço: {self.address}")
         self.connection.sendall(b" Bem vindo ao WhatPix!\n\n")
         thread = threading.Thread(target=self.awaitingResponse)
         thread.start()
-        
-        
         

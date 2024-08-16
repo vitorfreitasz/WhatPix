@@ -4,7 +4,9 @@ from Connection import Connection
 import time
 from zoneinfo import ZoneInfo
 from datetime import datetime
+import csv, os
 
+import json
 from config.logger import logger
 
 class Server:
@@ -12,16 +14,24 @@ class Server:
         self.host = host
         self.port = port
         self.socket = socket(AF_INET, SOCK_STREAM)
-        self.createduser=1000000000000
-        self.users = {}
         self.online_users = {}
         self.awaiting_messages = {}
+        self.userCounter = 1000000000000
+
+        self.base_dir = os.path.dirname(__file__) # diretório base do app
+        self.registeredUsers_path = os.path.join(self.base_dir, 'db', 'registeredUsers.csv')
         
     def start(self): # inicia o servidor
         logger.info("Iniciando o servidor.")
         self.socket.bind((self.host, self.port))
+        
+        if self.getRegisteredUSers():
+            self.userCounter = int(self.getRegisteredUSers().pop())
+
         self.socket.listen()
         print(f'Server running on: {self.host}:{self.port}')
+        logger.info(f"Server running on: {self.host}:{self.port}")
+        print(self.userCounter)
         self.connections()
         
     def connections(self): # cria uma nova thread para cada solicitação de conexão
@@ -31,21 +41,41 @@ class Server:
             print(self.online_users)
             
     def register(self, req, connectionClass):
-        codeUser = str(self.createduser)
-        self.createduser+=1
-        self.users[codeUser] = connectionClass
+        self.userCounter += 1
+        codeUser = str(self.userCounter)
+
         self.online_users[codeUser] = connectionClass
         self.awaiting_messages[codeUser] = []
         connectionClass.id = codeUser
         connectionClass.connection.sendall(f"02{codeUser}".encode('utf-8'))
+
+        with open(self.registeredUsers_path, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([codeUser])
+
+        logger.info(f"Novo usuário criado com o id: {codeUser}")
         return
-        
+
+    def getRegisteredUSers(self): #Retorna uma lista de usuários registrados
+        try:
+            with open(self.registeredUsers_path, 'r') as file:
+                registeredUsersList = []
+                reader = csv.reader(file)
+                for row in reader:
+                    if row:
+                        registeredUsersList.append(row[0])
+                return registeredUsersList
+
+        except FileNotFoundError:
+            print(f"Arquivo não encontrado.")
+
     def login(self, req, connectionClass):
         if req[2:] in self.online_users:
+            logger.warn(f"Usuário tentou logar com o id {req[2:]} mas já estava logado.")
             connectionClass.connection.sendall(f"00Usuário já esta online!".encode('utf-8'))
             return
-        if req[2:] in self.users:
-            self.users[req[2:]] = connectionClass
+
+        if req[2:] in self.getRegisteredUSers():
             self.online_users[req[2:]] = connectionClass
             
             connectionClass.connection.sendall(f"04{req[2:]}".encode('utf-8'))
@@ -53,7 +83,7 @@ class Server:
             messages = self.awaiting_messages[req[2:]]
             for message in messages:
                 newMessage = message
-                confirmSendMessage = '07' + f'{message[15:28],message[28:38]}'
+                confirmSendMessage = '07' + f'{message[15:28],message[28:41]}'
                 connectionClass.connection.sendall(newMessage.encode('utf-8'))
                 codeUser = message[2:16]
                 if codeUser in self.online_users:
@@ -63,6 +93,7 @@ class Server:
                     self.awaiting_messages[codeUser].append(message)
             self.awaiting_messages[req[2:]] = []
         else:
+            logger.warn(f"Tentativa de login com código não cadastrado. Código fornecido: {req[2:]}")
             connectionClass.connection.sendall(f"00Código identificador não cadastrado!".encode('utf-8'))
         return
     
@@ -70,13 +101,14 @@ class Server:
         
         print(req[15:28])
         if req[15:28] in self.online_users:
-            self.online_users[req[15:28]].connection.sendall(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
+            self.online_users[req[15:28]].connection.sendall(f"06{req[2:15]}{req[15:28]}{req[28:41]}{req[41:]}".encode('utf-8'))
             connectionClass.connection.sendall(f"07{req[15:28]}{str(time.time()).split('.')[0]}".encode('utf-8'))
-        elif req[15:28] in self.users:
-            self.awaiting_messages[req[15:28]].append(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
+        elif req[15:28] in self.getRegisteredUSers():
+            self.awaiting_messages[req[15:28]].append(f"06{req[2:15]}{req[15:28]}{req[28:41]}{req[41:]}".encode('utf-8'))
         return
         
     def thread_connection(self, conn, addr):
+        logger.info(f"Nova conexão: {conn}, {addr}")
         user = Connection(conn, addr, self)
         thread = threading.Thread(target=user.start)
         thread.start()
