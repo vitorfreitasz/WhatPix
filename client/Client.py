@@ -41,28 +41,33 @@ class Client:
 
             if response == 0: # envia um código 01 para o servidor solicitando um novo cadastro 
                 self.socket.send("01".encode('utf-8'))
+                self.printComandsList()
                 return
             elif response == 1: # pede para o usuário digitar seu número identificador
                 while True:
                     id = str(input(f' Escreva o seu código identificador: '))
                     if len(id) == 13:
                         self.socket.send(f"03{id}".encode('utf-8')) # envia um código 03 e o id do usuário para o servidor solcitando login
+                        self.printComandsList()
                         return
                     else:
                         print("Erro: código identificador de tamanho irregular.")
         
     def awaitingComands(self): # espera por um comando do usuário para tomar uma ação
+        print('\n Escreva seu comando: ')
         while True:
-            print("Lista de comandos:")
-            print("/m -> Solicita o id do usuário que deseja enviar uma mensagem;")
-            print("/r -> Envia mensagem para o usuário com o id da última mensagem recebida;")
-            print("/cancelar -> Cancela o envio de mensagem;")
-            print("/dc -> Desconecta do servidor;")
-            print("/help -> Mostra a lista de todos os comandos;")
-            print('\n Escreva seu comando: ')
             comand = input()
             self.handleComand(comand)
-            
+
+    def printComandsList(self):
+        print("\nLista de comandos:")
+        print("/m -> Solicita o id do usuário que deseja enviar uma mensagem;")
+        print("/r -> Envia mensagem para o usuário com o id da última mensagem recebida;")
+        print("/cancelar -> Cancela o envio de mensagem;")
+        print("/dc -> Desconecta do servidor;")
+        print("/help -> Mostra a lista de todos os comandos;")
+        
+
     def handleComand(self, comand): # verifica qual o comando o usuário digitou e toma uma ação com base nisso
         if comand == '/m':
             while True:
@@ -90,11 +95,12 @@ class Client:
             else:
                 print("Não há ninguém para responder.")
         if comand == '/dc':
-            print("\n Desconectando do servidor...")
+            print("\n Desconectando do servidor...\n\n")
             time.sleep(2)
             self.socket.close()
             return
         if comand == '/help':
+            self.printComandsList()
             self.awaitingComands()
         return
     
