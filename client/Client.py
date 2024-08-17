@@ -13,7 +13,7 @@ class Client:
 
     def start(self): # se conecta com o servidor
         self.socket.connect((self.host, self.port))
-        print(f'Connected on: {self.host}:{self.port}')
+        print(f'\n\nConnected on: {self.host}:{self.port}')
         print("""
                    __,__
           .--.  .-\"     \"-.  .--.
@@ -27,7 +27,7 @@ class Client:
                '._ '-=-' _.'
                   '-----' 
         """)
-
+        print(f'           Bem vindo ao WhatPix!')
         thread = threading.Thread(target=self.messages)
         thread.start()
         self.registerOrLogin()
