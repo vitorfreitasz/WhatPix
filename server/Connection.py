@@ -14,31 +14,33 @@ class Connection:
     def awaitingResponse(self):
         #logger.info('Criou nova thread.')
         while True:
-            try:
-                data = self.connection.recv(256)
-                if not data:
-                    break
-                req = data.decode()
-                if req:
-                    self.handleResponse(req)
-            except:
-                del self.server.online_users[self.id]
-                self.connection.close()
+            
+            data = self.connection.recv(256)
+            if not data:
+                break
+            req = data.decode()
+            if req:
+                self.handleResponse(req)
         
     def handleResponse(self, req):
         action = req[:2]
         
         if action == '01':
             self.server.register(req, self)
+            return
         elif action == '03':
             self.server.login(req, self)
+            return
         elif action == '05':
             self.server.message(req, self)
+            return
         elif action == '08':
             self.confirmaleitura
+            return
         
         else:
             self.connection.sendall(b"0000000000000")
+            return
             
     def start(self):
         logger.info(f"Nova conexão criada com o endereço: {self.address}")

@@ -54,23 +54,24 @@ class Client:
         
     def awaitingComands(self):
         while True:
-            comand = input('Escreva seu comando: ')
+            comand = input()
             self.handleComand(comand)
-            return
+        return
             
     def handleComand(self, comand):
-        if comand == 0:
+        if comand == '/mensage':
             while True:
                 dest = str(input(f"Para quem deseja enviar (digite 'cancelar' para cancelar): "))
                 if dest == 'cancelar':
-                    break
+                    return
                 if len(dest) == 13:
                     message = str(input(f"Mensagem: "))
                     if len(message) <= 218:
                         finalMessage = f"05{self.codeUser}{dest}{str(time.time()).split('.')[0]}{message}".encode('utf-8')
-                        self.socket.send(f"{finalMessage}".encode('utf-8'))
-                        break
-            return
+                        
+                        self.socket.send(finalMessage)
+                        return
+        return
     
     def messages(self):
         while True:
@@ -81,15 +82,17 @@ class Client:
                 self.registerOrLogin()
             if req[:2] == "02":
                 self.codeUser = req[2:]
-                print(f"Usuário cadastrado!\n Id: ({self.codeUser})")
+                print(f"\nUsuário cadastrado!\n Id: ({self.codeUser})\n")
+                print('\n Escreva seu comando: ')
                 thread = threading.Thread(target=self.awaitingComands)
                 thread.start()
             if req[:2] == "04":
                 self.codeUser = req[2:]
-                print(f"Usuário logado!\n Id: ({self.codeUser})")
+                print(f"\nUsuário logado!\n Id: ({self.codeUser})\n")
+                print('\n Escreva seu comando: ')
                 thread = threading.Thread(target=self.awaitingComands)
                 thread.start()
             if req[:2] == '06':
-                print(f"Mensagem de ({req[2:15]}): {req[38:]}")
+                print(f"\nMensagem de ({req[2:15]}): {req[38:]}\n")
             if req[:2] == '07':
-                print(f"Mensagem entregue as ({datetime.fromtimestamp(int(req[15:]), tz=ZoneInfo('America/Sao_Paulo'))}) para ({req[2:15]}).")
+                print(f"\nMensagem entregue as ({datetime.fromtimestamp(int(req[15:]), tz=ZoneInfo('America/Sao_Paulo'))}) para ({req[2:15]}).\n")

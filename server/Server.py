@@ -81,17 +81,18 @@ class Server:
             connectionClass.connection.sendall(f"04{req[2:]}".encode('utf-8'))
             connectionClass.id = req[2:]
             messages = self.awaiting_messages[req[2:]]
-            for message in messages:
-                newMessage = message
-                confirmSendMessage = '07' + f'{message[15:28],message[28:41]}'
-                connectionClass.connection.sendall(newMessage.encode('utf-8'))
-                codeUser = message[2:16]
-                if codeUser in self.online_users:
-                    connClass = self.online_users[codeUser]
-                    connClass.connection.sendall(confirmSendMessage.encode('utf-8'))
-                else:
-                    self.awaiting_messages[codeUser].append(message)
-            self.awaiting_messages[req[2:]] = []
+            if len(messages) > 0:
+                for message in messages:
+                    newMessage = message
+                    confirmSendMessage = '07' + f'{message[15:28],message[28:41]}'
+                    connectionClass.connection.sendall(newMessage.encode('utf-8'))
+                    codeUser = message[2:16]
+                    if codeUser in self.online_users:
+                        connClass = self.online_users[codeUser]
+                        connClass.connection.sendall(confirmSendMessage.encode('utf-8'))
+                    else:
+                        self.awaiting_messages[codeUser].append(message)
+                self.awaiting_messages[req[2:]] = []
         else:
             logger.warn(f"Tentativa de login com código não cadastrado. Código fornecido: {req[2:]}")
             connectionClass.connection.sendall(f"00Código identificador não cadastrado!".encode('utf-8'))
@@ -99,7 +100,6 @@ class Server:
     
     def message(self, req, connectionClass):
         
-        print(req[15:28])
         if req[15:28] in self.online_users:
             self.online_users[req[15:28]].connection.sendall(f"06{req[2:15]}{req[15:28]}{req[28:41]}{req[41:]}".encode('utf-8'))
             connectionClass.connection.sendall(f"07{req[15:28]}{str(time.time()).split('.')[0]}".encode('utf-8'))
