@@ -22,6 +22,7 @@ class Connection:
                 if req:
                     self.handleResponse(req)
         except (ConnectionResetError, BrokenPipeError) as e:
+            logger.warn(f"Conexão perdida com ({self.id}).")
             print(f"Conexão perdida com ({self.id}).")
         finally:
             self.cleanup()
@@ -31,16 +32,17 @@ class Connection:
         del self.server.online_users[self.id]
         if self.connection:
             self.connection.close()
+        logger.info(f"Conexão fechada com ({self.id}).")
         print(f"Conexão fechada com ({self.id}).")
         return
         
-    def handleResponse(self, req):
+    def handleResponse(self, req): # recebe a requisição e utiliza o código para tomar uma decisão
         action = req[:2]
         
-        if action == '01':
+        if action == '01': # se 01 então registra um novo usuário
             self.server.register(req, self)
             return
-        elif action == '03':
+        elif action == '03': # se 03 então realiza o login do usuário
             self.server.login(req, self)
             return
         elif action == '05':

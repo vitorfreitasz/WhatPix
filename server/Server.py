@@ -26,14 +26,13 @@ class Server:
         self.socket.listen()
         print(f'Server running on: {self.host}:{self.port}')
         logger.info(f"Server running on: {self.host}:{self.port}")
-        print(self.userCounter)
         self.connections()
         
     def connections(self): # cria uma nova thread para cada solicitação de conexão
         while True:
             conn, addr = self.socket.accept()
             self.thread_connection(conn, addr)
-            print(self.online_users)
+            #print(self.online_users)
             
     def register(self, req, connectionClass):
         self.userCounter += 1
@@ -51,7 +50,7 @@ class Server:
         logger.info(f"Novo usuário criado com o id: {codeUser}")
         return
 
-    def getRegisteredUSers(self): #Retorna uma lista de usuários registrados
+    def getRegisteredUSers(self): # retorna uma lista de usuários registrados
         try:
             with open(self.registeredUsers_path, 'r') as file:
                 registeredUsersList = []
@@ -64,13 +63,13 @@ class Server:
         except FileNotFoundError:
             print(f"Arquivo não encontrado.")
 
-    def login(self, req, connectionClass):
-        if req[2:] in self.online_users:
+    def login(self, req, connectionClass): # método para realizar login
+        if req[2:] in self.online_users: # verifica se o usuário já está online
             logger.warn(f"Usuário tentou logar com o id {req[2:]} mas já estava logado.")
             connectionClass.connection.sendall(f"00Usuário já esta online!".encode('utf-8'))
             return
 
-        if req[2:] in self.getRegisteredUSers():
+        if req[2:] in self.getRegisteredUSers(): # verifica se o usuário está registrado
             self.online_users[req[2:]] = connectionClass
             
             connectionClass.connection.sendall(f"04{req[2:]}".encode('utf-8'))
@@ -96,7 +95,6 @@ class Server:
         return
     
     def message(self, req, connectionClass):
-        
         if req[15:28] in self.online_users:
             self.online_users[req[15:28]].connection.sendall(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
             connectionClass.connection.sendall(f"07{req[15:28]}{str(time.time()).split('.')[0]}".encode('utf-8'))
