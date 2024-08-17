@@ -56,8 +56,9 @@ class Client:
             print("Lista de comandos:")
             print("/m -> Solicita o id do usuário que deseja enviar uma mensagem;")
             print("/r -> Envia mensagem para o usuário com o id da última mensagem recebida;")
-            print("cancelar -> Cancela o envio de mensagem;")
+            print("/cancelar -> Cancela o envio de mensagem;")
             print("/dc -> Desconecta do servidor;")
+            print("/help -> Mostra a lista de todos os comandos;")
             print('\n Escreva seu comando: ')
             comand = input()
             self.handleComand(comand)
@@ -65,8 +66,8 @@ class Client:
     def handleComand(self, comand): # verifica qual o comando o usuário digitou e toma uma ação com base nisso
         if comand == '/m':
             while True:
-                dest = str(input(f"Para quem deseja enviar (digite 'cancelar' para cancelar): "))
-                if dest == 'cancelar':
+                dest = str(input(f"Para quem deseja enviar (digite '/cancelar' para cancelar): "))
+                if dest == '/cancelar':
                     return
                 if len(dest) == 13:
                     message = str(input(f"Mensagem: "))
@@ -92,6 +93,9 @@ class Client:
             print("\n Desconectando do servidor...")
             time.sleep(2)
             self.socket.close()
+            return
+        if comand == '/help':
+            self.awaitingComands()
         return
     
     def messages(self):
