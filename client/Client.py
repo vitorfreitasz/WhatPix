@@ -11,6 +11,7 @@ class Client:
         self.port = port
         self.socket = socket(AF_INET, SOCK_STREAM)
         self.codeUser = None
+        self.lastMessageUser = 0
 
     def start(self): # se conecta com o servidor
         self.socket.connect((self.host, self.port))
@@ -59,7 +60,7 @@ class Client:
         return
             
     def handleComand(self, comand):
-        if comand == '/mensage':
+        if comand == '/m':
             while True:
                 dest = str(input(f"Para quem deseja enviar (digite 'cancelar' para cancelar): "))
                 if dest == 'cancelar':
@@ -71,6 +72,21 @@ class Client:
                         
                         self.socket.send(finalMessage)
                         return
+        if comand == '/r':
+            if self.lastMessageUser != 0:
+                while True:
+                    message = str(input(f"Respondendo para ({self.lastMessageUser}).\n Mensagem (digite /cancelar para cancelar): "))
+                    if message == '/cancelar':
+                        return
+                    if len(message) <= 218:
+                        finalMessage = f"05{self.codeUser}{self.lastMessageUser}{str(time.time()).split('.')[0]}{message}".encode('utf-8')
+                        
+                        self.socket.send(finalMessage)
+                        return
+            else:
+                print("Não há ninguém para responder.")
+        if comand == '/dc':
+            self.socket.close()
         return
     
     def messages(self):
@@ -94,5 +110,10 @@ class Client:
                 thread.start()
             if req[:2] == '06':
                 print(f"\nMensagem de ({req[2:15]}): {req[38:]}\n")
+                self.lastMessageUser = req[2:15]
+                self.socket.send(f"08{req[2:15]}{str(time.time()).split('.')[0]}".encode('utf-8'))
             if req[:2] == '07':
-                print(f"\nMensagem entregue as ({datetime.fromtimestamp(int(req[15:]), tz=ZoneInfo('America/Sao_Paulo'))}) para ({req[2:15]}).\n")
+                print(f"\nEntregue para ({req[2:15]}). ({datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo'))}).\n")
+            if req[:2] == '09':
+                print(f"\nVisualizada por ({req[2:15]}) as ({datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo'))}) .\n")
+                

@@ -84,14 +84,16 @@ class Server:
             if len(messages) > 0:
                 for message in messages:
                     newMessage = message
-                    confirmSendMessage = '07' + f'{message[15:28],message[28:41]}'
-                    connectionClass.connection.sendall(newMessage.encode('utf-8'))
-                    codeUser = message[2:16]
-                    if codeUser in self.online_users:
-                        connClass = self.online_users[codeUser]
-                        connClass.connection.sendall(confirmSendMessage.encode('utf-8'))
-                    else:
-                        self.awaiting_messages[codeUser].append(message)
+                    connectionClass.connection.sendall(newMessage)
+                    confirmSendMessage = f"07{message.decode()[15:28]}{str(time.time()).split('.')[0]}"
+                    if message.decode()[2:] == "06":
+                        codeUser = message.decode()[2:15]
+                        if codeUser in self.online_users:
+                            connClass = self.online_users[codeUser]
+                            connClass.connection.sendall(confirmSendMessage.encode('utf-8'))
+                        else:
+                            self.awaiting_messages[codeUser].append(confirmSendMessage.encode('utf-8'))
+                    time.sleep(1)
                 self.awaiting_messages[req[2:]] = []
         else:
             logger.warn(f"Tentativa de login com código não cadastrado. Código fornecido: {req[2:]}")
@@ -101,10 +103,18 @@ class Server:
     def message(self, req, connectionClass):
         
         if req[15:28] in self.online_users:
-            self.online_users[req[15:28]].connection.sendall(f"06{req[2:15]}{req[15:28]}{req[28:41]}{req[41:]}".encode('utf-8'))
+            self.online_users[req[15:28]].connection.sendall(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
             connectionClass.connection.sendall(f"07{req[15:28]}{str(time.time()).split('.')[0]}".encode('utf-8'))
         elif req[15:28] in self.getRegisteredUSers():
-            self.awaiting_messages[req[15:28]].append(f"06{req[2:15]}{req[15:28]}{req[28:41]}{req[41:]}".encode('utf-8'))
+            self.awaiting_messages[req[15:28]].append(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
+        return
+    
+    def confirmRead(self, req, connectionClass):
+        
+        if req[2:15] in self.online_users:
+            self.online_users[req[2:15]].connection.sendall(f"09{connectionClass.id}{req[15:]}".encode('utf-8'))
+        elif req[2:15] in self.getRegisteredUSers():
+            self.awaiting_messages[req[2:15]].append(f"09{connectionClass.id}{req[15:]}".encode('utf-8'))
         return
         
     def thread_connection(self, conn, addr):

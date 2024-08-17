@@ -13,14 +13,26 @@ class Connection:
         
     def awaitingResponse(self):
         #logger.info('Criou nova thread.')
-        while True:
+        try:
+            while True:
+                data = self.connection.recv(256)
+                if not data:
+                    break
+                req = data.decode()
+                if req:
+                    self.handleResponse(req)
+        except (ConnectionResetError, BrokenPipeError) as e:
+            print(f"Conexão perdida com ({self.id}).")
+        finally:
+            self.cleanup()
             
-            data = self.connection.recv(256)
-            if not data:
-                break
-            req = data.decode()
-            if req:
-                self.handleResponse(req)
+    def cleanup(self):
+        self.online = False
+        del self.server.online_users[self.id]
+        if self.connection:
+            self.connection.close()
+        print(f"Conexão fechada com ({self.id}).")
+        return
         
     def handleResponse(self, req):
         action = req[:2]
@@ -35,7 +47,7 @@ class Connection:
             self.server.message(req, self)
             return
         elif action == '08':
-            self.confirmaleitura
+            self.server.confirmRead(req, self)
             return
         
         else:
