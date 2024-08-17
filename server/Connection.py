@@ -1,6 +1,6 @@
-from config.logger import logger
 import threading
-from time import sleep
+
+from config.logger import logger
 
 class Connection:
     def __init__(self, conn, addr, server):

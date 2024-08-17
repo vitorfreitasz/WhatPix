@@ -1,7 +1,5 @@
 from socket import *
-import time
-from time import sleep
-import threading
+import time, threading
 from zoneinfo import ZoneInfo
 from datetime import datetime
 
