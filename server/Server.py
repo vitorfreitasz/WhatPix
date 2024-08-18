@@ -64,26 +64,28 @@ class Server:
             print(f"Arquivo não encontrado.")
 
     def login(self, req, connectionClass): # método para realizar login
-        if req[2:] in self.online_users: # verifica se o usuário já está online
-            logger.warn(f"Usuário tentou logar com o id {req[2:]} mas já estava logado.")
+        user_request = req[2:]
+
+        if user_request in self.online_users: # verifica se o usuário já está online
+            logger.warn(f"Usuário tentou logar com o id {user_request} mas já estava logado.")
             connectionClass.connection.sendall(f"00Usuário já esta online!".encode('utf-8'))
             return
 
-        if not req[2:] in self.getRegisteredUSers(): # verifica se o usuário está registrado
-            logger.warn(f"Tentativa de login com código não cadastrado. Código fornecido: {req[2:]}")
+        if not user_request in self.getRegisteredUSers(): # verifica se o usuário está registrado
+            logger.warn(f"Tentativa de login com código não cadastrado. Código fornecido: {user_request}")
             connectionClass.connection.sendall(f"00Código identificador não cadastrado!".encode('utf-8'))
             return
         
-        self.online_users[req[2:]] = connectionClass
-        connectionClass.connection.sendall(f"04{req[2:]}".encode('utf-8'))
-        connectionClass.id = req[2:]
-        logger.info(f"Usuário {req[2:]} logado com sucesso.")
+        self.online_users[user_request] = connectionClass
+        connectionClass.connection.sendall(f"04{user_request}".encode('utf-8'))
+        connectionClass.id = user_request
+        logger.info(f"Usuário {user_request} logado com sucesso.")
         
         if len(self.awaiting_messages) == 0:
             return
-        if not self.awaiting_messages[req[2:]]:
+        if not self.awaiting_messages[user_request]:
             return
-        messages = self.awaiting_messages[req[2:]]
+        messages = self.awaiting_messages[user_request]
         if len(messages) > 0:
             for message in messages:
                 newMessage = message
@@ -97,22 +99,29 @@ class Server:
                     else:
                         self.awaiting_messages[codeUser].append(confirmSendMessage.encode('utf-8'))
                 time.sleep(1)
-            self.awaiting_messages[req[2:]] = []            
+            self.awaiting_messages[user_request] = []            
         return
     
     def message(self, req, connectionClass):
-        if req[15:28] in self.online_users:
-            self.online_users[req[15:28]].connection.sendall(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
-            connectionClass.connection.sendall(f"07{req[15:28]}{str(time.time()).split('.')[0]}".encode('utf-8'))
-        elif req[15:28] in self.getRegisteredUSers():
-            self.awaiting_messages[req[15:28]].append(f"06{req[2:15]}{req[15:28]}{req[28:38]}{req[38:]}".encode('utf-8'))
+        user_send = req[2:15] # id que enviou a mensagem
+        user_receive = req[15:28] # id que recebe
+        timestemp = req[28:38] # timestemp de envio
+        message = req[38:] # conteúdo da mensagem
+
+        if user_receive in self.online_users:
+            self.online_users[user_receive].connection.sendall(f"06{user_send}{user_receive}{timestemp}{message}".encode('utf-8'))
+            connectionClass.connection.sendall(f"07{user_receive}{str(time.time()).split('.')[0]}".encode('utf-8'))
+        elif user_receive in self.getRegisteredUSers():
+            self.awaiting_messages[user_receive].append(f"06{user_send}{user_receive}{timestemp}{message}".encode('utf-8'))
         return
     
     def confirmRead(self, req, connectionClass):
-        if req[2:15] in self.online_users:
-            self.online_users[req[2:15]].connection.sendall(f"09{connectionClass.id}{req[15:]}".encode('utf-8'))
-        elif req[2:15] in self.getRegisteredUSers():
-            self.awaiting_messages[req[2:15]].append(f"09{connectionClass.id}{req[15:]}".encode('utf-8'))
+        user_send = req[2:15] # id que enviou a mensagem
+        user_receive = req[15:] # id que recebe
+        if user_send in self.online_users:
+            self.online_users[user_send].connection.sendall(f"09{connectionClass.id}{user_receive}".encode('utf-8'))
+        elif user_send in self.getRegisteredUSers():
+            self.awaiting_messages[user_send].append(f"09{connectionClass.id}{user_receive}".encode('utf-8'))
         return
         
     def thread_connection(self, conn, addr):
