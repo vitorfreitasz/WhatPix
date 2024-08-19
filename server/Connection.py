@@ -56,7 +56,7 @@ class Connection:
             return
         
         else: # Se nenhuma das opções, retorna 00 (erro)
-            self.connection.sendall(b"0000000000000")
+            self.connection.sendall(f"00Erro: código de protocolo não identificado.".encode('uft-8'))
             return
             
     #   Método que inicia a conexão, criando uma thread para o aguardo de mensagens.
