@@ -3,16 +3,17 @@ import threading
 from config.logger import logger
 
 class Connection:
+    #   Constructor da classe de conexão.
     def __init__(self, conn, addr, server):
         super().__init__()
-        self.connection = conn
-        self.address = addr
-        self.server = server
-        self.online = True
-        self.id = None
+        self.connection = conn # Conexão
+        self.address = addr # Endereço
+        self.server = server # Instancia da classe do servidor
+        self.online = False # Usuário online ou não.
+        self.id = None # Identificador do usuário, caso esteja cadastrado ou logado
         
+    #   Método que aguarda mensagens vindas do servidor.
     def awaitingResponse(self):
-        #logger.info('Criou nova thread.')
         try:
             while True:
                 data = self.connection.recv(256)
@@ -26,7 +27,8 @@ class Connection:
             #print(f"Conexão perdida com ({self.id}).")
         finally:
             self.cleanup()
-            
+        
+    #   Método que fecha a conexão com o cliente, excluindo-o dos usuários online e encerrando a conexão
     def cleanup(self):
         self.online = False
         del self.server.online_users[self.id]
@@ -36,26 +38,28 @@ class Connection:
         #print(f"Conexão fechada com ({self.id}).")
         return
         
-    def handleResponse(self, req): # recebe a requisição e utiliza o código para tomar uma decisão
+    #   Método que recebe a requisição, e gerencia com base no código enviado
+    def handleResponse(self, req): 
         action = req[:2]
         
-        if action == '01': # se 01 então registra um novo usuário
+        if action == '01': # Se 01, então registra um novo usuário
             self.server.register(req, self)
             return
-        elif action == '03': # se 03 então realiza o login do usuário
+        elif action == '03': # Se 03, então realiza o login do usuário
             self.server.login(req, self)
             return
-        elif action == '05':
+        elif action == '05': # Se 05, então gerencia a mensagem enviando e confirmando envio, ou armazenando.
             self.server.message(req, self)
             return
-        elif action == '08':
+        elif action == '08': # Se 08, então gerencia a confirmação de leitura da mensagem.
             self.server.confirmRead(req, self)
             return
         
-        else:
+        else: # Se nenhuma das opções, retorna 00 (erro)
             self.connection.sendall(b"0000000000000")
             return
             
+    #   Método que inicia a conexão, criando uma thread para o aguardo de mensagens.
     def start(self):
         logger.info(f"Nova conexão criada com o endereço: {self.address}")
         self.connection.sendall(b" Bem vindo ao WhatPix!\n\n")

@@ -4,14 +4,16 @@ from zoneinfo import ZoneInfo
 from datetime import datetime
 
 class Client:
+    #   Constructor da classe do cliente.
     def __init__(self, host, port):
-        self.host = host
-        self.port = port
-        self.socket = socket(AF_INET, SOCK_STREAM)
-        self.codeUser = None
-        self.lastMessageUser = 0
+        self.host = host # Endereço do servidor
+        self.port = port # Porta
+        self.socket = socket(AF_INET, SOCK_STREAM) # Instancia da conexão com o servidor
+        self.codeUser = None # Código identificador do usuário caso ele se registre ou logue.
+        self.lastMessageUser = 0 # Código do último usuário a enviar mensagem para o cliente.
 
-    def start(self): # se conecta com o servidor
+    # Inicia a conexão com o servidor, e cria a thread que gerencia as mensagens recebidas.
+    def start(self): 
         self.socket.connect((self.host, self.port))
         print(f'\n\nConnected on: {self.host}:{self.port}')
         print("""
@@ -32,30 +34,34 @@ class Client:
         thread.start()
         self.registerOrLogin()
 
-    def close(self): # encerra a conexão com o servidor
+    #   Encerra a conexão com o servidor
+    def close(self): 
         self.socket.close()
         
-    def registerOrLogin(self): # pede para o usuário que se registre ou faça login
+    #   Método que solicita para o usuário que se registre ou faça login
+    def registerOrLogin(self): 
         while True:
             response = int(input('--------------------------------------\n\n Para cadastrar-se, digite 0.\n\n Para entrar digite 1.\n\n--------------------------------------\n\n'))
 
-            if response == 0: # envia um código 01 para o servidor solicitando um novo cadastro 
+            if response == 0: # Envia um código 01 para o servidor solicitando um novo cadastro 
                 self.socket.send("01".encode('utf-8'))
                 return
-            elif response == 1: # pede para o usuário digitar seu número identificador
+            elif response == 1: # Pede para o usuário digitar seu número identificador
                 while True:
                     id = str(input(f' Escreva o seu código identificador: '))
                     if len(id) == 13:
-                        self.socket.send(f"03{id}".encode('utf-8')) # envia um código 03 e o id do usuário para o servidor solcitando login
+                        self.socket.send(f"03{id}".encode('utf-8')) # Envia um código 03 e o id do usuário para o servidor solcitando login
                         return
                     else:
                         print("Erro: código identificador de tamanho irregular.")
 
-    def awaitingComands(self): # espera por um comando do usuário para tomar uma ação
+    #   Espera por um comando do usuário para tomar uma ação.
+    def awaitingComands(self): 
         while True:
             comand = input()
             self.handleComand(comand)
 
+    #   Método que mostra todos os possíveis comandos.
     def printComandsList(self):
         print("\nLista de comandos:")
         print("/m -> Solicita o id do usuário que deseja enviar uma mensagem;")
@@ -64,8 +70,8 @@ class Client:
         print("/dc -> Desconecta do servidor;")
         print("/help -> Mostra a lista de todos os comandos;\n\n")
         
-
-    def handleComand(self, comand): # verifica qual o comando o usuário digitou e toma uma ação com base nisso
+    #   Verifica qual o comando o usuário digitou e toma uma ação com base nisso.
+    def handleComand(self, comand): 
         if comand == '/m':
             while True:
                 dest = str(input(f"Para quem deseja enviar (digite '/cancelar' para cancelar): "))
@@ -100,6 +106,7 @@ class Client:
             self.printComandsList()
         return
     
+    #   Gerencia o recebimento de mensagens, e com base no código recebido, realiza a ação designada.
     def messages(self):
         while True:
             data = self.socket.recv(256)

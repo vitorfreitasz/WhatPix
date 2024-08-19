@@ -5,18 +5,21 @@ from Connection import Connection
 from config.logger import logger
 
 class Server:
+    #   Constructor da classe do servidor.
     def __init__(self, host, port):
-        self.host = host
-        self.port = port
-        self.socket = socket(AF_INET, SOCK_STREAM)
-        self.online_users = {}
-        self.userCounter = 1000000000000
-
-        self.base_dir = os.path.dirname(__file__) # diretório base do app
-        self.registeredUsers_path = os.path.join(self.base_dir, 'db', 'registeredUsers.csv')
-        self.awaitingMessages_path = os.path.join(self.base_dir, 'db', 'awaitingmessages.json')
+        self.host = host # Endereço IP do servidor
+        self.port = port # Porta
+        self.socket = socket(AF_INET, SOCK_STREAM) # Instancia do socket
         
-    def start(self): # inicia o servidor
+        self.online_users = {} # Lista de usuários online
+        self.userCounter = 1000000000000 # Contador de registros de usuário
+
+        self.base_dir = os.path.dirname(__file__) # Diretório base da aplicação
+        self.registeredUsers_path = os.path.join(self.base_dir, 'db', 'registeredUsers.csv') # Diretório do arquivo de armazenamento de registro de usuários
+        self.awaitingMessages_path = os.path.join(self.base_dir, 'db', 'awaitingmessages.json') # Diretório do arquivo de armazenamento de mensagens pendentes
+        
+    #   Método que inicia o servidor
+    def start(self):
         logger.info("Iniciando o servidor.")
         self.socket.bind((self.host, self.port))
         if self.getRegisteredUSers():
@@ -27,32 +30,34 @@ class Server:
         logger.info(f"Server running on: {self.host}:{self.port}")
         self.connections()
 
-    def getAwaitingMessages(self): # retorna o json com as awaitingmessages
+    #   Retorna o Json com as mensagens pendentes
+    def getAwaitingMessages(self): 
         with open(self.awaitingMessages_path, 'r') as file:
             return json.load(file)
         
-    def cleanupAwaitingMessagesForUser(self, user): # remove as awaitingmessages do usuário especificado
+    #   Remove as mensagens pendentes do usuário especificado, ou cria ele no armazenamento pela primeira vez
+    def cleanupAwaitingMessagesForUser(self, user): 
         awaitingMessages = self.getAwaitingMessages()
         awaitingMessages[user] = []
         with open(self.awaitingMessages_path, 'w') as file:
             json.dump(awaitingMessages, file, indent=4)
             return
 
-    def registerAwaitingMessage(self, user, message): # registra uma nova mensagem para o usuário receber quando estiver online
+    #   Registra uma nova mensagem pendente para o usuário receber quando estiver online
+    def registerAwaitingMessage(self, user, message): 
         awaitingMessages = self.getAwaitingMessages()
-        #print(f"awaitingMessages antes: {awaitingMessages}")
-        awaitingMessages[user].append(message) 
-        #print(f"awaitingMessages depois: {awaitingMessages}")   
+        awaitingMessages[user].append(message)   
         with open(self.awaitingMessages_path, 'w') as file:
             json.dump(awaitingMessages, file, indent=4)
             return
 
-    def connections(self): # cria uma nova thread para cada solicitação de conexão
+    #   Aguarda uma nova conexão chegar, ao chegar, cria uma nova thread para aquela conexão
+    def connections(self): 
         while True:
             conn, addr = self.socket.accept()
             self.thread_connection(conn, addr)
-            #print(self.online_users)
             
+    #   Registra um usuário, criando um novo identificador e retornado ao usuário
     def register(self, req, connectionClass):
         self.userCounter += 1
         codeUser = str(self.userCounter)
@@ -70,7 +75,8 @@ class Server:
         logger.info(f"Novo usuário criado com o id: {codeUser}")
         return
 
-    def getRegisteredUSers(self): # retorna uma lista de usuários registrados
+    #   Retorna uma lista de usuários registrados
+    def getRegisteredUSers(self): 
         try:
             with open(self.registeredUsers_path, 'r') as file:
                 registeredUsersList = []
@@ -83,7 +89,8 @@ class Server:
         except FileNotFoundError:
             print(f"Arquivo não encontrado.")
 
-    def login(self, req, connectionClass): # método para realizar login
+    #   Método para realizar Login, que verifica se há mensagens pendentes e as envia para ele, e envia também as confirmações para quem enviou.
+    def login(self, req, connectionClass): 
         user_request = req[2:]
 
         if user_request in self.online_users: # verifica se o usuário já está online
@@ -118,11 +125,12 @@ class Server:
             self.cleanupAwaitingMessagesForUser(user_request)
         return
 
+    #   Método que gerencia as mensagens enviadas pelos usuários, enviando para o destinatário e confirmando para quem enviou, ou armazenando a mensagem pendente.
     def message(self, req, connectionClass):
-        user_send = req[2:15] # id que enviou a mensagem
-        user_receive = req[15:28] # id que recebe
-        timestemp = req[28:38] # timestemp de envio
-        message = req[38:] # conteúdo da mensagem
+        user_send = req[2:15] # Id que enviou a mensagem
+        user_receive = req[15:28] # Id que recebe
+        timestemp = req[28:38] # Timestemp de envio
+        message = req[38:] # Conteúdo da mensagem
 
         if user_receive in self.online_users:
             self.online_users[user_receive].connection.sendall(f"06{user_send}{user_receive}{timestemp}{message}".encode('utf-8'))
@@ -131,15 +139,18 @@ class Server:
             self.registerAwaitingMessage(user_receive, (f"06{user_send}{user_receive}{timestemp}{message}"))
         return
     
+    #   Método que gerencia a confirmação de leitura.
     def confirmRead(self, req, connectionClass):
-        user_send = req[2:15] # id que enviou a mensagem
-        user_receive = req[15:] # id que recebe
+        user_send = req[2:15] # Id que enviou a mensagem
+        user_receive = req[15:] # Id que recebe
+        
         if user_send in self.online_users:
             self.online_users[user_send].connection.sendall(f"09{connectionClass.id}{user_receive}".encode('utf-8'))
         elif user_send in self.getRegisteredUSers():
             self.registerAwaitingMessage(user_send, (f"09{connectionClass.id}{user_receive}"))
         return
         
+    #   Instacia uma classe para cada nova conexão, e cria uma thread para cada instancia da classe.
     def thread_connection(self, conn, addr):
         logger.info(f"Nova conexão: {conn}, {addr}")
         user = Connection(conn, addr, self)
