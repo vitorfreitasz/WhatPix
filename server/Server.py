@@ -1,5 +1,5 @@
 from socket import *
-import csv, os, time, threading
+import csv, os, time, threading, json
 
 from Connection import Connection
 from config.logger import logger
@@ -10,16 +10,15 @@ class Server:
         self.port = port
         self.socket = socket(AF_INET, SOCK_STREAM)
         self.online_users = {}
-        self.awaiting_messages = {}
         self.userCounter = 1000000000000
 
         self.base_dir = os.path.dirname(__file__) # diretório base do app
         self.registeredUsers_path = os.path.join(self.base_dir, 'db', 'registeredUsers.csv')
+        self.awaitingMessages_path = os.path.join(self.base_dir, 'db', 'awaitingmessages.json')
         
     def start(self): # inicia o servidor
         logger.info("Iniciando o servidor.")
         self.socket.bind((self.host, self.port))
-        
         if self.getRegisteredUSers():
             self.userCounter = int(self.getRegisteredUSers().pop())
 
@@ -27,7 +26,27 @@ class Server:
         print(f'Server running on: {self.host}:{self.port}')
         logger.info(f"Server running on: {self.host}:{self.port}")
         self.connections()
+
+    def getAwaitingMessages(self): # retorna o json com as awaitingmessages
+        with open(self.awaitingMessages_path, 'r') as file:
+            return json.load(file)
         
+    def cleanupAwaitingMessagesForUser(self, user): # remove as awaitingmessages do usuário especificado
+        awaitingMessages = self.getAwaitingMessages()
+        awaitingMessages[user] = []
+        with open(self.awaitingMessages_path, 'w') as file:
+            json.dump(awaitingMessages, file, indent=4)
+            return
+
+    def registerAwaitingMessage(self, user, message): # registra uma nova mensagem para o usuário receber quando estiver online
+        awaitingMessages = self.getAwaitingMessages()
+        #print(f"awaitingMessages antes: {awaitingMessages}")
+        awaitingMessages[user].append(message) 
+        #print(f"awaitingMessages depois: {awaitingMessages}")   
+        with open(self.awaitingMessages_path, 'w') as file:
+            json.dump(awaitingMessages, file, indent=4)
+            return
+
     def connections(self): # cria uma nova thread para cada solicitação de conexão
         while True:
             conn, addr = self.socket.accept()
@@ -39,13 +58,14 @@ class Server:
         codeUser = str(self.userCounter)
 
         self.online_users[codeUser] = connectionClass
-        self.awaiting_messages[codeUser] = []
         connectionClass.id = codeUser
         connectionClass.connection.sendall(f"02{codeUser}".encode('utf-8'))
 
         with open(self.registeredUsers_path, 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([codeUser])
+
+        self.cleanupAwaitingMessagesForUser(codeUser)
 
         logger.info(f"Novo usuário criado com o id: {codeUser}")
         return
@@ -80,28 +100,24 @@ class Server:
         connectionClass.connection.sendall(f"04{user_request}".encode('utf-8'))
         connectionClass.id = user_request
         logger.info(f"Usuário {user_request} logado com sucesso.")
-        
-        if len(self.awaiting_messages) == 0:
-            return
-        if not self.awaiting_messages[user_request]:
-            return
-        messages = self.awaiting_messages[user_request]
+
+        messages = self.getAwaitingMessages()[user_request]
         if len(messages) > 0:
             for message in messages:
-                newMessage = message
+                newMessage = message.encode('utf-8')
                 connectionClass.connection.sendall(newMessage)
-                confirmSendMessage = f"07{message.decode()[15:28]}{str(time.time()).split('.')[0]}"
-                if message.decode()[2:] == "06":
-                    codeUser = message.decode()[2:15]
+                confirmSendMessage = f"07{message[15:28]}{str(time.time()).split('.')[0]}"
+                if message[2:] == "06":
+                    codeUser = message[2:15]
                     if codeUser in self.online_users:
                         connClass = self.online_users[codeUser]
                         connClass.connection.sendall(confirmSendMessage.encode('utf-8'))
                     else:
-                        self.awaiting_messages[codeUser].append(confirmSendMessage.encode('utf-8'))
+                        self.registerAwaitingMessage(codeUser, confirmSendMessage)
                 time.sleep(1)
-            self.awaiting_messages[user_request] = []            
+            self.cleanupAwaitingMessagesForUser(user_request)
         return
-    
+
     def message(self, req, connectionClass):
         user_send = req[2:15] # id que enviou a mensagem
         user_receive = req[15:28] # id que recebe
@@ -112,7 +128,7 @@ class Server:
             self.online_users[user_receive].connection.sendall(f"06{user_send}{user_receive}{timestemp}{message}".encode('utf-8'))
             connectionClass.connection.sendall(f"07{user_receive}{str(time.time()).split('.')[0]}".encode('utf-8'))
         elif user_receive in self.getRegisteredUSers():
-            self.awaiting_messages[user_receive].append(f"06{user_send}{user_receive}{timestemp}{message}".encode('utf-8'))
+            self.registerAwaitingMessage(user_receive, (f"06{user_send}{user_receive}{timestemp}{message}"))
         return
     
     def confirmRead(self, req, connectionClass):
@@ -121,7 +137,7 @@ class Server:
         if user_send in self.online_users:
             self.online_users[user_send].connection.sendall(f"09{connectionClass.id}{user_receive}".encode('utf-8'))
         elif user_send in self.getRegisteredUSers():
-            self.awaiting_messages[user_send].append(f"09{connectionClass.id}{user_receive}".encode('utf-8'))
+            self.registerAwaitingMessage(user_send, (f"09{connectionClass.id}{user_receive}"))
         return
         
     def thread_connection(self, conn, addr):
