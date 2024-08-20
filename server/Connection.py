@@ -54,6 +54,9 @@ class Connection:
         elif action == '08': # Se 08, então gerencia a confirmação de leitura da mensagem.
             self.server.confirmRead(req, self)
             return
+        elif action == '10': # Se 10, então gerencia a criação de um grupo.
+            self.server.createGroup(req, self)
+            return
         
         else: # Se nenhuma das opções, retorna 00 (erro)
             self.connection.sendall(f"00Erro: código de protocolo não identificado.".encode('utf-8'))
