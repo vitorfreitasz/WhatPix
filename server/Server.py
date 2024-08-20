@@ -13,10 +13,12 @@ class Server:
         
         self.online_users = {} # Lista de usuários online
         self.userCounter = 1000000000000 # Contador de registros de usuário
+        self.groupCounter = 2000000000000 # Contador de registros de grupos
 
         self.base_dir = os.path.dirname(__file__) # Diretório base da aplicação
         self.registeredUsers_path = os.path.join(self.base_dir, 'db', 'registeredUsers.csv') # Diretório do arquivo de armazenamento de registro de usuários
         self.awaitingMessages_path = os.path.join(self.base_dir, 'db', 'awaitingmessages.json') # Diretório do arquivo de armazenamento de mensagens pendentes
+        self.groups_path = os.path.join(self.base_dir, 'db', 'groups.json') # Diretório do arquivo de armazenamento de grupos
         
     #   Método que inicia o servidor
     def start(self):
@@ -24,6 +26,10 @@ class Server:
         self.socket.bind((self.host, self.port))
         if self.getRegisteredUSers():
             self.userCounter = int(self.getRegisteredUSers().pop())
+            
+        if self.getGroups():
+            chave, _ = self.getGroups().popitem()
+            self.groupCounter = int(chave)
 
         self.socket.listen()
         print(f'Server running on: {self.host}:{self.port}')
@@ -149,6 +155,50 @@ class Server:
         elif user_send in self.getRegisteredUSers():
             self.registerAwaitingMessage(user_send, (f"09{connectionClass.id}{user_receive}"))
         return
+    
+    def getGroups(self):
+        with open(self.groups_path, 'r') as file:
+            return json.load(file)
+    
+    def createGroup(self, req, connectionClass):
+        creator = req[2:15] # Código do criador do grupo
+        timestemp = req[15:25] # Timestemp de envio
+        members = req[25:] # Código dos membros
+        groups = self.getGroups()
+        self.groupCounter += 1
+        
+        codeGroup = str(self.groupCounter)
+        
+        groups[codeGroup] = {}
+        groups[codeGroup][creator]=[]
+        memberscont = len(members) // 13
+        init = 0
+        final = 13
+        for cont in range(memberscont):
+            if members[init:final] not in self.getRegisteredUSers():
+                connectionClass.connection.sendall(f"00Código de membro não cadastrado! ({members[init:final]})".encode('utf-8'))
+                return
+            groups[codeGroup][members[init:final]] = []
+            init += 13
+            final += 13
+            
+            if members[init:final] in self.online_users:
+                self.online_users[members[init:final]].connection.sendall(f"11{codeGroup}{creator}{members}".encode('utf-8'))
+                
+            elif members[init:final] in self.getRegisteredUSers():
+                self.registerAwaitingMessage(members[init:final], (f"11{codeGroup}{creator}{members}".encode('utf-8')))
+                
+        
+        if creator in self.online_users:
+            self.online_users[creator].connection.sendall(f"11{codeGroup}{creator}{members}".encode('utf-8'))
+            
+        elif creator in self.getRegisteredUSers():
+            self.registerAwaitingMessage(creator, (f"11{codeGroup}{creator}{members}".encode('utf-8')))
+        
+        
+        with open(self.groups_path, 'w') as file:
+            json.dump(groups, file, indent=4)
+            return
         
     #   Instacia uma classe para cada nova conexão, e cria uma thread para cada instancia da classe.
     def thread_connection(self, conn, addr):
