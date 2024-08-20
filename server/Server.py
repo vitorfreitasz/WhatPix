@@ -138,11 +138,21 @@ class Server:
         timestemp = req[28:38] # Timestemp de envio
         message = req[38:] # Conteúdo da mensagem
 
-        if user_receive in self.online_users:
-            self.online_users[user_receive].connection.sendall(f"06{user_send}{user_receive}{timestemp}{message}".encode('utf-8'))
-            connectionClass.connection.sendall(f"07{user_receive}{str(time.time()).split('.')[0]}".encode('utf-8'))
-        elif user_receive in self.getRegisteredUSers():
-            self.registerAwaitingMessage(user_receive, (f"06{user_send}{user_receive}{timestemp}{message}"))
+        if user_receive[0] == "2":
+            groups = self.getGroups()
+            for memberId in groups[user_receive]:
+                if memberId != user_send:    
+                    if memberId in self.online_users:
+                        self.online_users[memberId].connection.sendall(f"06{user_receive}{memberId}{timestemp}{message}".encode('utf-8'))
+                    elif memberId in self.getRegisteredUSers():
+                        self.registerAwaitingMessage(memberId, (f"06{user_receive}{memberId}{timestemp}{message}"))
+                
+        else:
+            if user_receive in self.online_users:
+                self.online_users[user_receive].connection.sendall(f"06{user_send}{user_receive}{timestemp}{message}".encode('utf-8'))
+                connectionClass.connection.sendall(f"07{user_receive}{str(time.time()).split('.')[0]}".encode('utf-8'))
+            elif user_receive in self.getRegisteredUSers():
+                self.registerAwaitingMessage(user_receive, (f"06{user_send}{user_receive}{timestemp}{message}"))
         return
     
     #   Método que gerencia a confirmação de leitura.
@@ -179,22 +189,20 @@ class Server:
                 connectionClass.connection.sendall(f"00Código de membro não cadastrado! ({members[init:final]})".encode('utf-8'))
                 return
             groups[codeGroup][members[init:final]] = []
+            if members[init:final] in self.online_users:
+                self.online_users[members[init:final]].connection.sendall(f"11{codeGroup}{timestemp}{creator}{members}".encode('utf-8'))
+                
+            elif members[init:final] in self.getRegisteredUSers():
+                self.registerAwaitingMessage(members[init:final], (f"11{codeGroup}{timestemp}{creator}{members}"))
+            
             init += 13
             final += 13
             
-            if members[init:final] in self.online_users:
-                self.online_users[members[init:final]].connection.sendall(f"11{codeGroup}{creator}{members}".encode('utf-8'))
-                
-            elif members[init:final] in self.getRegisteredUSers():
-                self.registerAwaitingMessage(members[init:final], (f"11{codeGroup}{creator}{members}".encode('utf-8')))
-                
-        
         if creator in self.online_users:
-            self.online_users[creator].connection.sendall(f"11{codeGroup}{creator}{members}".encode('utf-8'))
+            self.online_users[creator].connection.sendall(f"11{codeGroup}{timestemp}{creator}{members}".encode('utf-8'))
             
         elif creator in self.getRegisteredUSers():
-            self.registerAwaitingMessage(creator, (f"11{codeGroup}{creator}{members}".encode('utf-8')))
-        
+            self.registerAwaitingMessage(creator, (f"11{codeGroup}{timestemp}{creator}{members}"))
         
         with open(self.groups_path, 'w') as file:
             json.dump(groups, file, indent=4)
