@@ -174,6 +174,7 @@ class Client:
                     if name == '/cancelar':
                         return
                     self.registerContact(contact, name)
+                    print(f"\n Contato salvo!\n")
                     return
                 
         elif comand == '/cl':
@@ -188,7 +189,7 @@ class Client:
             return
         
         elif comand == '/cm':
-            print("\n Para enviar uma mensagem para algum contato, digite o nome de quem deseja enviar: \n")
+            print("\n Para enviar uma mensagem para algum contato, digite o nome de quem deseja enviar (Digite /sair para sair): \n")
             contact_list = self.getRegisteredContact()
             if contact_list:
                 for ctt in contact_list:
@@ -196,6 +197,8 @@ class Client:
                     print(f" {contact[1]} -> {contact[0]}\n")
                 while True:
                     name = str(input(f" Nome do contato: "))
+                    if name == "/sair":
+                        return
                     for ctt in contact_list:
                         contact = ctt.split('-')
                         if contact[1] == name:
@@ -207,15 +210,19 @@ class Client:
                                     print(f"\n\n ({str(datetime.fromtimestamp(int(msg[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Você: {msg[38:]}\n\n")
                                     
                             while True:
-                                message = str(input(f"\n Mensagem: "))
+                                message = str(input(f" Mensagem: "))
+                                if message == "/sair":
+                                    return
                                 if len(message) <= 218:
                                     finalMessage = f"05{self.codeUser}{contact[0]}{str(time.time()).split('.')[0]}{message}".encode('utf-8')
                                 
                                     self.registerMessageContact(finalMessage.decode())
                                     self.socket.send(finalMessage)
+                                    print(f"\n")
                                     return
                                 else:
                                     print("\n Mensagem muito grande. Máx 218 caractéres.\n")
+                    print(f"\n Nenhum contato encontrado com este nome.\n")
             else: 
                 print("\n Nenhum contato salvo.\n")
                 time.sleep(1)
