@@ -51,7 +51,6 @@ class Client:
     def registerContact(self, user, name):
         contact = f"{user}-{name}"
         contactsArray = self.getContacts()
-        print(f"ContactArray: {contactsArray}")
         if self.codeUser in contactsArray:
             contactsArray[self.codeUser]["contacts"].append(contact)
             with open(self.contacts_path, 'w') as file:
