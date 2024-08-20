@@ -241,6 +241,32 @@ class Client:
                 print("\n Operação cancelada.\n")
             return
                 
+        elif comand == '/cg':
+            print(f"\n Criação de grupo (digite /cancelar para cancelar)\n")
+            usersCodes = ""
+            cont = 0
+            while cont < 8:
+                print(f"Pediu {cont} ids")
+                id = str(input(f"\n Digite um código de usuário: "))
+                if id == "/cancelar":
+                    return
+                if id == "/parar":
+                    break
+                if len(id) == 13:
+                    usersCodes+=id
+                    cont+=1
+                    print(f"\n Usuário adicionado!\n")
+            
+            if len(usersCodes) < 13:
+                print(f"\n Erro: é necessário adicionar ao menos uma pessoa no grupo.\n")
+                return
+            
+            finalMessage = f"10{self.codeUser}{str(time.time()).split('.')[0]}{usersCodes}"
+                    
+            self.registerMessageContact(finalMessage)
+            self.socket.send(finalMessage.encode('utf-8'))
+            return
+                
         #   Desconecta do servidor
         elif comand == '/dc':
             print("\n Desconectando do servidor...\n\n")
