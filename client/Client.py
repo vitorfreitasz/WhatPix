@@ -135,7 +135,7 @@ class Client:
     #   Método que mostra todos os possíveis comandos.
     def printComandsList(self):
         print("\n Lista de comandos:")
-        print(" /m -> Solicita o id do usuário que deseja enviar uma mensagem;\n /r -> Envia mensagem para o usuário com o id da última mensagem recebida;\n /cancelar -> Cancela o envio de mensagem;\n /dc -> Desconecta do servidor;\n /rc -> Registra um novo contato.\n /cl -> Lista os contatos.\n /cm -> Envia mensagem para o contato que escolher.\n /help -> Mostra a lista de todos os comandos;\n\n")
+        print(" /m -> Solicita o id do usuário que deseja enviar uma mensagem;\n /r -> Envia mensagem para o usuário com o id da última mensagem recebida;\n /cancelar -> Cancela o envio de mensagem;\n /dc -> Desconecta do servidor;\n /rc -> Registra um novo contato.\n /cl -> Lista os contatos.\n /cm -> Envia mensagem para o contato que escolher.\n /cg -> Cria um grupo.\n /help -> Mostra a lista de todos os comandos;\n\n")
         
     #   Verifica qual o comando o usuário digitou e toma uma ação com base nisso.
     def handleComand(self, comand): 
