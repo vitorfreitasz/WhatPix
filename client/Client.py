@@ -75,7 +75,7 @@ class Client:
         if self.codeUser in contactsArray:
             contacts_list = contactsArray[self.codeUser]["contacts"]
             return contacts_list
-        return
+        return []
                 
         
     #   Método que salva mensagens no histórico de mensagens.
@@ -310,7 +310,10 @@ class Client:
                     if contact.split('-')[0] == req[2:15]:
                         contactOrNot = contact.split('-')[1]
                 if contactOrNot == 'None':
-                    print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Usuário - {req[2:15]}: {req[38:]}\n\n")
+                    if req[2] == "2":
+                        print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Grupo - {req[2:15]}: {req[38:]}\n\n")
+                    else:
+                        print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Usuário - {req[2:15]}: {req[38:]}\n\n")
                 else:
                     print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) {contactOrNot}: {req[38:]}\n\n")
                 self.lastMessageUser = req[2:15]
@@ -320,4 +323,12 @@ class Client:
                 print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Entregue para {req[2:15]}.")
             if req[:2] == '09':
                 print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Visualizada por {req[2:15]}.\n")
-                
+            if req[:2] == '11':
+                contactOrNot = "None"
+                for contact in self.getRegisteredContact():
+                    if contact.split('-')[0] == req[25:38]:
+                        contactOrNot = contact.split('-')[1]
+                if contactOrNot == 'None':
+                    print(f"\n Você foi adicionado ao grupo: {req[2:15]} pelo usuário ({req[25:38]}) as {str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}.\n")
+                else:
+                    print(f"\n Você foi adicionado ao grupo: {req[2:15]} pelo {contactOrNot} as {str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}.\n")
