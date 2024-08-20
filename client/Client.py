@@ -44,10 +44,12 @@ class Client:
     def close(self): 
         self.socket.close()
         
+    #   Pega do arquivo, o Json dos contatos.
     def getContacts(self): 
         with open(self.contacts_path, 'r') as file:
             return json.load(file)
         
+    #   Método que registra um novo contato.
     def registerContact(self, user, name):
         contact = f"{user}-{name}"
         contactsArray = self.getContacts()
@@ -66,6 +68,7 @@ class Client:
                 json.dump(contactsArray, file, indent=4)
             return
 
+    #   Método que pega os contatos registrados.
     def getRegisteredContact(self): 
         contactsArray = self.getContacts()
         
@@ -75,6 +78,7 @@ class Client:
         return
                 
         
+    #   Método que salva mensagens no histórico de mensagens.
     def registerMessageContact(self, message):
         
         contactsArray = self.getContacts()
@@ -93,7 +97,7 @@ class Client:
                 json.dump(contactsArray, file, indent=4)
                 return
                 
-        
+    #   Método que pega o histórico de mensagens de uma conversa específica.
     def getMessagesSpecific(self, user): 
         contactsArray = self.getContacts()
         historyMessages = []
