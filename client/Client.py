@@ -201,12 +201,14 @@ class Client:
         
         #   Envia mensagem para o contato que escolher.
         elif comand == '/cm':
+            print("--------------------------------------------------------------------------------------------------------------")
             print("\n Para enviar uma mensagem para algum contato, digite o nome de quem deseja enviar (Digite /sair para sair): \n")
             contact_list = self.getRegisteredContact()
             if contact_list:
                 for ctt in contact_list:
                     contact = ctt.split('-')
                     print(f" {contact[1]} -> {contact[0]}\n")
+                print("--------------------------------------------------------------------------------------------------------------")
                 while True:
                     name = str(input(f" Nome do contato: "))
                     if name == "/sair":
@@ -241,8 +243,9 @@ class Client:
                 print("\n Operação cancelada.\n")
             return
                 
+        #   Cria um grupo.
         elif comand == '/cg':
-            print(f"\n Criação de grupo (digite /cancelar para cancelar)\n")
+            print(f"\n Criação de grupo (digite /cancelar para cancelar, ou /parar para parar)\n")
             usersCodes = ""
             cont = 0
             while cont < 7:
