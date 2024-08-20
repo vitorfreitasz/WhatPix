@@ -245,7 +245,7 @@ class Client:
             print(f"\n Criação de grupo (digite /cancelar para cancelar)\n")
             usersCodes = ""
             cont = 0
-            while cont < 8:
+            while cont < 7:
                 print(f"Pediu {cont} ids")
                 id = str(input(f"\n Digite um código de usuário: "))
                 if id == "/cancelar":
