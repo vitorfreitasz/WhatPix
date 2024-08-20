@@ -131,7 +131,7 @@ class Client:
     #   Método que mostra todos os possíveis comandos.
     def printComandsList(self):
         print("\n Lista de comandos:")
-        print(" /m -> Solicita o id do usuário que deseja enviar uma mensagem;\n /r -> Envia mensagem para o usuário com o id da última mensagem recebida;\n /cancelar -> Cancela o envio de mensagem;\n /dc -> Desconecta do servidor;\n /help -> Mostra a lista de todos os comandos;\n\n")
+        print(" /m -> Solicita o id do usuário que deseja enviar uma mensagem;\n /r -> Envia mensagem para o usuário com o id da última mensagem recebida;\n /cancelar -> Cancela o envio de mensagem;\n /dc -> Desconecta do servidor;\n /rc -> Registra um novo contato.\n /cl -> Lista os contatos.\n /cm -> Envia mensagem para o contato que escolher.\n /help -> Mostra a lista de todos os comandos;\n\n")
         
     #   Verifica qual o comando o usuário digitou e toma uma ação com base nisso.
     def handleComand(self, comand): 
@@ -148,7 +148,7 @@ class Client:
                         self.registerMessageContact(finalMessage.decode())
                         self.socket.send(finalMessage)
                         return
-        if comand == '/r':
+        elif comand == '/r':
             if self.lastMessageUser != 0:
                 while True:
                     message = str(input(f" Respondendo para ({self.lastMessageUser}).\n Mensagem (digite /cancelar para cancelar): "))
@@ -162,7 +162,8 @@ class Client:
                         return
             else:
                 print("Não há ninguém para responder.")
-        if comand == '/rc':
+                return
+        elif comand == '/rc':
             print("\n Registrando contato (digite /cancelar para cancelar)\n")
             while True:
                 contact = str(input(f" Cód. Identificador: "))
@@ -175,7 +176,7 @@ class Client:
                     self.registerContact(contact, name)
                     return
                 
-        if comand == '/cl':
+        elif comand == '/cl':
             contact_list = self.getRegisteredContact()
             if contact_list:
                 print("\n Lista de contatos:\n")
@@ -186,7 +187,7 @@ class Client:
                 print("\n Nenhum contato salvo.\n")
             return
         
-        if comand == '/cm':
+        elif comand == '/cm':
             print("\n Para enviar uma mensagem para algum contato, digite o nome de quem deseja enviar: \n")
             contact_list = self.getRegisteredContact()
             if contact_list:
@@ -222,13 +223,16 @@ class Client:
             return
                 
                 
-        if comand == '/dc':
+        elif comand == '/dc':
             print("\n Desconectando do servidor...\n\n")
             time.sleep(2)
             self.socket.close()
             return
-        if comand == '/help':
+        elif comand == '/help':
             self.printComandsList()
+            return
+        else:
+            print("\n Comando não reconhecido.\n")
         return
     
     #   Gerencia o recebimento de mensagens, e com base no código recebido, realiza a ação designada.
