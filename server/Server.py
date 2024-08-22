@@ -187,7 +187,6 @@ class Server:
         for cont in range(memberscont):
             if members[init:final] not in self.getRegisteredUSers():
                 connectionClass.connection.sendall(f"00Código de membro não cadastrado! ({members[init:final]})".encode('utf-8'))
-                return
             groups[codeGroup][members[init:final]] = []
             if members[init:final] in self.online_users:
                 self.online_users[members[init:final]].connection.sendall(f"11{codeGroup}{timestemp}{creator}{members}".encode('utf-8'))
