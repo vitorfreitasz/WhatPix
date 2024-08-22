@@ -5,8 +5,8 @@ Repositório criado para armazenar o trabalho da disciplina de Redes de Computad
 <br>
 
 ## Como rodar?
-- Run `python server/main.py` Para rodar o servidor da aplicação.
-- Run `python client/main.py` Para rodar cada cliente.
+- Rode `python server/main.py` Para rodar o servidor da aplicação.
+- Rode `python client/main.py` Para rodar cada cliente.
 
 ## Funcionalidades
 
@@ -28,7 +28,7 @@ Repositório criado para armazenar o trabalho da disciplina de Redes de Computad
 
 ## Arquitetura
 
-The project's folder structure is organized as follows:
+O projeto está configurado na seguinte arquitetura de páginas:
 
 ```
 WhatPix/        Diretório geral.
