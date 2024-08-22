@@ -143,9 +143,9 @@ class Server:
             for memberId in groups[user_receive]:
                 if memberId != user_send:    
                     if memberId in self.online_users:
-                        self.online_users[memberId].connection.sendall(f"06{user_receive}{memberId}{timestemp}{message}".encode('utf-8'))
+                        self.online_users[memberId].connection.sendall(f"06{user_receive}{user_send}{timestemp}{message}".encode('utf-8'))
                     elif memberId in self.getRegisteredUSers():
-                        self.registerAwaitingMessage(memberId, (f"06{user_receive}{memberId}{timestemp}{message}"))
+                        self.registerAwaitingMessage(memberId, (f"06{user_receive}{user_send}{timestemp}{message}"))
                 
         else:
             if user_receive in self.online_users:

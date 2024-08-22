@@ -13,6 +13,7 @@ class Client:
         self.socket = socket(AF_INET, SOCK_STREAM) # Instancia da conexão com o servidor
         self.codeUser = None # Código identificador do usuário caso ele se registre ou logue.
         self.lastMessageUser = 0 # Código do último usuário a enviar mensagem para o cliente.
+        self.lastGroupAdded = None
         self.inChat = False
         self.base_dir = os.path.dirname(__file__) # Diretório base da aplicação
         self.messagesContacts_path = os.path.join(self.base_dir, 'db', 'messagescontacts.json')
@@ -269,6 +270,17 @@ class Client:
             self.registerMessageContact(finalMessage)
             self.socket.send(finalMessage.encode('utf-8'))
             return
+        
+        #   Comando para adicionar um grupo recém criado aos contatos
+        elif comand == '/sim':
+            print("\n Registrando grupo aos contatos (digite /cancelar para cancelar)\n")
+            while True:
+                name = str(input(f" Digite o nome do contato: "))
+                if name == '/cancelar':
+                    return
+                self.registerContact(self.lastGroupAdded, name)
+                print(f"\n Contato salvo!\n")
+                return
                 
         #   Desconecta do servidor
         elif comand == '/dc':
@@ -291,7 +303,7 @@ class Client:
             data = self.socket.recv(256)
             req = data.decode()
             if req[:2] == '00':
-                print(f"{req[2:]}\n")
+                print(f"\n ERRO: \n{req[2:]}\n")
                 self.registerOrLogin()
             if req[:2] == "02":
                 self.codeUser = req[2:]
@@ -314,24 +326,61 @@ class Client:
                         contactOrNot = contact.split('-')[1]
                 if contactOrNot == 'None':
                     if req[2] == "2":
-                        print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Grupo - {req[2:15]}: {req[38:]}\n\n")
+                        contactOrNotUserSend = "None"
+                        for contact in self.getRegisteredContact():
+                            if contact.split('-')[0] == req[15:28]:
+                                contactOrNotUserSend = contact.split('-')[1]
+                        if contactOrNotUserSend == 'None':
+                            print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) (Grupo - {req[2:15]}) {req[15:28]}: {req[38:]}\n\n")
+                        else:
+                            print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) (Grupo - {req[2:15]}) {contactOrNotUserSend}: {req[38:]}\n\n")
                     else:
                         print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Usuário - {req[2:15]}: {req[38:]}\n\n")
                 else:
-                    print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) {contactOrNot}: {req[38:]}\n\n")
+                    if req[2] == "2":
+                        contactOrNotUserSend = "None"
+                        for contact in self.getRegisteredContact():
+                            if contact.split('-')[0] == req[15:28]:
+                                contactOrNotUserSend = contact.split('-')[1]
+                        if contactOrNotUserSend == 'None':
+                            print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) ({contactOrNot}) {req[15:28]}: {req[38:]}\n\n")
+                        else:
+                            print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) ({contactOrNot}) {contactOrNotUserSend}: {req[38:]}\n\n")
+                    else:
+                        print(f"\n\n ({str(datetime.fromtimestamp(int(req[28:38]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) {contactOrNot}: {req[38:]}\n\n")
                 self.lastMessageUser = req[2:15]
                 self.registerMessageContact(req)
                 self.socket.send(f"08{req[2:15]}{str(time.time()).split('.')[0]}".encode('utf-8'))
             if req[:2] == '07':
-                print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Entregue para {req[2:15]}.")
-            if req[:2] == '09':
-                print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Visualizada por {req[2:15]}.\n")
-            if req[:2] == '11':
                 contactOrNot = "None"
                 for contact in self.getRegisteredContact():
-                    if contact.split('-')[0] == req[25:38]:
+                    if contact.split('-')[0] == req[2:15]:
                         contactOrNot = contact.split('-')[1]
                 if contactOrNot == 'None':
-                    print(f"\n Você foi adicionado ao grupo: {req[2:15]} pelo usuário ({req[25:38]}) as {str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}.\n")
+                    print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Entregue para {req[2:15]}.")
                 else:
-                    print(f"\n Você foi adicionado ao grupo: {req[2:15]} pelo {contactOrNot} as {str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}.\n")
+                    print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Entregue para {contactOrNot}.")
+            if req[:2] == '09':
+                contactOrNot = "None"
+                for contact in self.getRegisteredContact():
+                    if contact.split('-')[0] == req[2:15]:
+                        contactOrNot = contact.split('-')[1]
+                if contactOrNot == 'None':
+                    print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Visualizada por {req[2:15]}.\n")
+                else:
+                    print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Visualizada por {contactOrNot}.\n")
+            if req[:2] == '11':
+                self.lastGroupAdded = req[2:15]
+                if req[25:38] == self.codeUser:
+                    print(f"\n Grupo criado com sucesso!\n")
+                else:   
+                    contactOrNot = "None"
+                    for contact in self.getRegisteredContact():
+                        if contact.split('-')[0] == req[25:38]:
+                            contactOrNot = contact.split('-')[1]
+                    if contactOrNot == 'None':
+                        print(f"\n Você foi adicionado ao grupo: {req[2:15]} pelo usuário ({req[25:38]}) as {str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}.\n")
+                    else:
+                        print(f"\n Você foi adicionado ao grupo: {req[2:15]} pelo {contactOrNot} as {str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}.\n")
+                
+                print(f"\n Deseja adicionar o grupo aos seus contatos? (/sim)\n")
