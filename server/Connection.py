@@ -24,7 +24,6 @@ class Connection:
                     self.handleResponse(req)
         except (ConnectionResetError, BrokenPipeError) as e:
             logger.warn(f"Conexão perdida com ({self.id}).")
-            #print(f"Conexão perdida com ({self.id}).")
         finally:
             self.cleanup()
         

@@ -13,11 +13,10 @@ class Client:
         self.socket = socket(AF_INET, SOCK_STREAM) # Instancia da conexão com o servidor
         self.codeUser = None # Código identificador do usuário caso ele se registre ou logue.
         self.lastMessageUser = 0 # Código do último usuário a enviar mensagem para o cliente.
-        self.lastGroupAdded = None
-        self.inChat = False
+        self.lastGroupAdded = None # Código do último grupo a ser adicionado.
+        self.inChat = False # Boleano para verificar se a pessoa está no chat com outra.
         self.base_dir = os.path.dirname(__file__) # Diretório base da aplicação
-        self.messagesContacts_path = os.path.join(self.base_dir, 'db', 'messagescontacts.json')
-        self.contacts_path = os.path.join(self.base_dir, 'db', 'contacts.json')
+        self.contacts_path = os.path.join(self.base_dir, 'db', 'contacts.json') # Diretório para o arquivo json que armazena os contatos e o histórico de mensagens.
 
     # Inicia a conexão com o servidor, e cria a thread que gerencia as mensagens recebidas.
     def start(self): 
@@ -302,9 +301,13 @@ class Client:
         while True:
             data = self.socket.recv(256)
             req = data.decode()
+            #   Código 00: Determinado para casos de erros.
             if req[:2] == '00':
                 print(f"\n ERRO: \n{req[2:]}\n")
                 self.registerOrLogin()
+                
+            
+            #   Código 02: Determinado para retorno de uma tentativa de cadastro.
             if req[:2] == "02":
                 self.codeUser = req[2:]
                 print(f"\n Usuário cadastrado!\n Id: ({self.codeUser})\n")
@@ -312,6 +315,9 @@ class Client:
                 print('\n Escreva seu comando: ')
                 thread = threading.Thread(target=self.awaitingComands)
                 thread.start()
+                
+            
+            #   Código 04: Determinado para retorno de tentativa de login.
             if req[:2] == "04":
                 self.codeUser = req[2:]
                 print(f"\n Usuário logado!\n Id: ({self.codeUser})\n")
@@ -319,6 +325,9 @@ class Client:
                 print('\n Escreva seu comando: ')
                 thread = threading.Thread(target=self.awaitingComands)
                 thread.start()
+                
+            
+            #   Código 06: Determinado para tratamento de recebimento de mensagens.
             if req[:2] == '06':
                 contactOrNot = "None"
                 for contact in self.getRegisteredContact():
@@ -351,6 +360,9 @@ class Client:
                 self.lastMessageUser = req[2:15]
                 self.registerMessageContact(req)
                 self.socket.send(f"08{req[2:15]}{str(time.time()).split('.')[0]}".encode('utf-8'))
+                
+            
+            #   Código 07: Determinado para retorno de confirmação de entrega de mensagens.
             if req[:2] == '07':
                 contactOrNot = "None"
                 for contact in self.getRegisteredContact():
@@ -360,6 +372,9 @@ class Client:
                     print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Entregue para {req[2:15]}.")
                 else:
                     print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Entregue para {contactOrNot}.")
+            
+            
+            #   Código 09: Determinado para confirmação de leitura de mensagens.
             if req[:2] == '09':
                 contactOrNot = "None"
                 for contact in self.getRegisteredContact():
@@ -369,6 +384,9 @@ class Client:
                     print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Visualizada por {req[2:15]}.\n")
                 else:
                     print(f"\n ({str(datetime.fromtimestamp(int(req[15:25]), tz=ZoneInfo('America/Sao_Paulo')))[11:16]}) Visualizada por {contactOrNot}.\n")
+            
+            
+            #   Código 11: Determinado para tratar o retorno da criação de um grupo.
             if req[:2] == '11':
                 self.lastGroupAdded = req[2:15]
                 if req[25:38] == self.codeUser:
