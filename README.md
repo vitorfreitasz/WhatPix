@@ -4,9 +4,9 @@ Repositório criado para armazenar o trabalho da disciplina de Redes de Computad
 </p>
 <br>
 
-- [Arquitetura](#architechture)
-- [Funcionalidades](#features)
 - [Como rodar?](#usage)
+- [Funcionalidades](#features)
+- [Arquitetura](#architechture)
 
 ## Como rodar?
 - Run `python server/main.py` Para rodar o servidor da aplicação.
