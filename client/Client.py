@@ -303,8 +303,9 @@ class Client:
             req = data.decode()
             #   Código 00: Determinado para casos de erros.
             if req[:2] == '00':
-                print(f"\n ERRO: \n{req[2:]}\n")
-                self.registerOrLogin()
+                print(f"\n ERRO: \n {req[2:]}\n")
+                if not self.codeUser:
+                    self.registerOrLogin()
                 
             
             #   Código 02: Determinado para retorno de uma tentativa de cadastro.
