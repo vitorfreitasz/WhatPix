@@ -57,5 +57,3 @@ WhatPix/        Diretório geral.
 ├── .gitignore              Arquivo que administra os arquivos que irão ou não ser enviados ao repositório.
 └── Trabalho 1.pdf          Arquivo PDF com a especificação do protocolo.
 ```
-
-REPOSITÓRIO DO TRABALHO: https://github.com/vitorfreitasz/WhatPix
